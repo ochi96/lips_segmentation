@@ -4,12 +4,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.model_zoo as modelzoo
-
-# from modules.bn import InPlaceABNSync as BatchNorm2d
-
-resnet18_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
-
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -80,7 +74,7 @@ class Resnet18(nn.Module):
         return feat8, feat16, feat32
 
     def init_weight(self):
-        state_dict = modelzoo.load_url(resnet18_url)
+        state_dict = torch.load('models/resnet18.pth')
         self_state_dict = self.state_dict()
         for k, v in state_dict.items():
             if 'fc' in k: continue

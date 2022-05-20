@@ -1,2 +1,11 @@
 # lips_segmentation
-Changes color of lips from an image
+Detects and segments lips and eyebrows
+
+To run:
+
+from segmentation import SegmentFace
+
+path = 'images/img.jpg'
+
+SegmentFace(path).run()
+
