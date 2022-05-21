@@ -1,4 +1,5 @@
 # differentiate images according to HSV value
+
 import cv2
 
 flags = ['brightest', 'darkest', 'in-between']

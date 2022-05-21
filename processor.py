@@ -22,31 +22,27 @@ class ImageProcessor():
         self.image = cv2.imread(image_path)
         self.image_height, self.image_width = self.image.shape[0:2]
         self.desired_height, self.desired_width = (900,900)
+        self.cropped_face = self.crop_face()
         self.face_type = self.get_face_type()
         self.bordered_image_size = 1536
         self.gaussian_blur=(3,3)
         self.kernel_sharpener = 9
         self.mean_height = 40
+        self.pixel_threshold = 0
 
-        if self.face_type=="brightest":
-            self.gaussian_blur=(5, 5)
+        # if self.face_type=="brightest":
+        #     self.desired_height, self.desired_width = (768, 768)
   
         if self.face_type=="darkest":
-            self.pixel_threshold = 5
             self.bgr = {'b' : 100,  'g' : 70,  'r' : 150}
             self.bgr_alt = {'b' : 0,  'g' : 0,  'r' : 0}
         
         if self.face_type=="darker_inb":
             self.bordered_image_size = 1344
-            self.pixel_threshold = 0
             self.bgr = {'b' : 180,  'g' : 190,  'r' : 110}
             self.bgr_alt = {'b' : 200, 'g' : 0,  'r' : 0}
         
         if self.face_type=="lighter_inb":
-            # self.desired_height, self.desired_width = (1024,1024)
-            # self.bordered_image_size = 1536
-            self.mean_height = 30
-            self.pixel_threshold = 0
             self.bgr = {'b' : 255, 'g' : 120, 'r' : 140}
             self.bgr_alt = {'b': 70, 'g' : 80,  'r' : 105}
             # ....then grayscale before segment face
@@ -70,20 +66,13 @@ class ImageProcessor():
         cropped_image_height, cropped_image_width = self.cropped_face.shape[0:2]
 
         mean = cv2.mean(self.image[cropped_image_height-self.mean_height:cropped_image_height, 0:cropped_image_width])[0]
-        bottom_bordersize, top_bordersize = round((self.bordered_image_size - cropped_image_width)/2), round((self.bordered_image_size - cropped_image_height)/2)
+        bottom_bordersize, top_bordersize = round((self.bordered_image_size - cropped_image_width)/2), \
+                                            round((self.bordered_image_size - cropped_image_height)/2)
 
-        # if self.face_type=='lighter_inb':
-        #     self.bordered_image = image
-        # else:
-        self.bordered_image = cv2.copyMakeBorder(
-            image,
-            top=top_bordersize,
-            bottom=top_bordersize,
-            left=bottom_bordersize,
-            right=bottom_bordersize,
-            borderType=cv2.BORDER_CONSTANT,
-            value=[mean, mean, mean]
-            )
+        self.bordered_image = cv2.copyMakeBorder(image, top=top_bordersize,
+                                bottom=top_bordersize, left=bottom_bordersize,
+                                right=bottom_bordersize, borderType=cv2.BORDER_CONSTANT,
+                                value=[mean, mean, mean])
         # cv2.imshow('bordered face', self.bordered_image)
         # cv2.waitKey()
         # cv2.destroyAllWindows()
@@ -111,25 +100,13 @@ class ImageProcessor():
             self.recolored_image = scaled_gray
             print(self.face_type)
         
-        elif self.face_type == "darkest" or self.face_type=="darker_inb":
+        elif self.face_type == "darkest" or self.face_type=="darker_inb" or self.face_type == "lighter_inb":
             self.recolored_image = np.array([[[self.bgr['b']%pixel, self.bgr['g']%pixel, self.bgr['r']%pixel] if pixel>=self.pixel_threshold else \
                 [self.bgr_alt['b']%pixel,self.bgr_alt['g']%pixel,self.bgr_alt['r']%pixel] \
                     for pixel in row] for row in scaled_gray], dtype = np.dtype('float32'))
+            if self.face_type == "lighter_inb":
+                self.recolored_image= cv2.cvtColor(self.recolored_image, cv2.COLOR_BGR2GRAY)
             print(self.face_type)
-        
-        elif self.face_type == "lighter_inb":
-            print('lol')
-            self.recolored_image = np.array([[[self.bgr['b']%pixel, self.bgr['g']%pixel, self.bgr['r']%pixel] if pixel>=self.pixel_threshold else \
-                [self.bgr_alt['b']%pixel,self.bgr_alt['g']%pixel,self.bgr_alt['r']%pixel] \
-                    for pixel in row] for row in scaled_gray], dtype = np.dtype('float32'))
-            self.recolored_image= cv2.cvtColor(self.recolored_image, cv2.COLOR_BGR2GRAY)
-
-            cv2.imshow('final image', (self.recolored_image))
-            cv2.waitKey()
-            cv2.destroyAllWindows()
-            print(self.face_type)
-
-        self.recolored_image = cv2.resize(self.recolored_image, (1024, 1024))
 
         return self.recolored_image
  
@@ -137,11 +114,17 @@ class ImageProcessor():
         face_type = categorize_image(self.image)
         return face_type
 
+    def crop_face(self):
+        center_x, center_y = int(self.image_height/2), int(self.image_width/2)
+        half_crop_width, half_crop_height = int(self.bordered_image_size/2), int(self.bordered_image_size/2)
+        cropped_face = self.image[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
+        return cropped_face
+
     
     def run(self):
         self.crop_image()
         self.create_border()
-        return self.recolor_image()
+        return self.cropped_face, self.recolor_image()
 
 
 
