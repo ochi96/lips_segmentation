@@ -56,8 +56,7 @@ class SegmentFace(object):
 		return changed
 
 	def run(self):
-		image = cv2.resize(np.array(self.__image_orig), (1536, 1536))
-		# image = self.__image_orig
+		image = cv2.resize(np.array(self.__original_image), (1536, 1536))
 
 		image_mask = image.copy()
 		image_mask = cv2.rectangle(image_mask, (0, 0), (1080, 1080), self.__mask_background_color, thickness = 1080)

@@ -22,28 +22,28 @@ from segmentation import SegmentFace
 # print('lol')
 
 
-# def reverse_processed_image(processed_img):
-#     img = cv2.resize(processed_img, (1536, 1536))
-#     center_x, center_y = int(1536/2), int(1536/2)
-#     half_crop_width, half_crop_height = int(450), int(450)
-#     cropped_face = img[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
+def reverse_processed_image(processed_img):
+    img = cv2.resize(processed_img, (1536, 1536))
+    center_x, center_y = int(1536/2), int(1536/2)
+    half_crop_width, half_crop_height = int(450), int(450)
+    cropped_face = img[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
 
-#     # cv2.imwrite('cropped.png', cropped_face)
+    # cv2.imwrite('cropped.png', cropped_face)
 
-#     cropped_image_height, cropped_image_width = cropped_face.shape[0:2]
+    cropped_image_height, cropped_image_width = cropped_face.shape[0:2]
 
-#     mean = cv2.mean(cropped_face[cropped_image_height-30:cropped_image_height, 0:cropped_image_width])[0]
-#     bottom_bordersize, top_bordersize = round((1536 - cropped_image_width)/2), \
-#                                         round((1536 - cropped_image_height)/2)
+    mean = cv2.mean(cropped_face[cropped_image_height-30:cropped_image_height, 0:cropped_image_width])[0]
+    bottom_bordersize, top_bordersize = round((1536 - cropped_image_width)/2), \
+                                        round((1536 - cropped_image_height)/2)
 
-#     bordered_image = cv2.copyMakeBorder(cropped_face, top=top_bordersize,
-#                             bottom=top_bordersize, left=bottom_bordersize,
-#                             right=bottom_bordersize, borderType=cv2.BORDER_CONSTANT,
-#                             value=[mean, mean, mean])
+    bordered_image = cv2.copyMakeBorder(cropped_face, top=top_bordersize,
+                            bottom=top_bordersize, left=bottom_bordersize,
+                            right=bottom_bordersize, borderType=cv2.BORDER_CONSTANT,
+                            value=[mean, mean, mean])
     
-#     cv2.imwrite('original.png', bordered_image)
+    cv2.imwrite('original.png', bordered_image)
 
-#     pass
+    pass
 
 # reverse_processed_image(original_img)
 
@@ -83,7 +83,7 @@ def crop_orig(img_path):
     cv2.imwrite('lol2_cropped.png', cropped_face)
     pass
 
-# crop_orig('lol2.png')
+
 
 
 from PIL import Image
@@ -96,6 +96,10 @@ def paste_into_it(img_path_1, img_path2):
     back_im.paste(im2, (256, 256))
     back_im.save('final.png', quality=95)
 
+    return back_im
+
     pass
 
-paste_into_it('lol2.png', 'lol2_cropped_segmented.png')
+# paste_into_it('lol2.png', 'lol2_cropped_segmented.png')
+
+crop_orig('images/originals/lol2.png')

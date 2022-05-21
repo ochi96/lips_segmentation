@@ -22,9 +22,9 @@ class ImageProcessor():
         self.image = cv2.imread(image_path)
         self.image_height, self.image_width = self.image.shape[0:2]
         self.desired_height, self.desired_width = (900,900)
-        self.cropped_face = self.crop_face()
-        self.face_type = self.get_face_type()
         self.bordered_image_size = 1536
+        self.cropped_image = self.crop_image()
+        self.face_type = self.get_face_type()
         self.gaussian_blur=(3,3)
         self.kernel_sharpener = 9
         self.mean_height = 40
@@ -49,7 +49,7 @@ class ImageProcessor():
         
         pass
 
-    def crop_image(self):
+    def crop_face(self):
 
         crop_width = self.desired_width if self.desired_width<self.image_width else self.image_width
         crop_height = self.desired_height if self.desired_height<self.image_height else self.image_height
@@ -114,19 +114,17 @@ class ImageProcessor():
         face_type = categorize_image(self.image)
         return face_type
 
-    def crop_face(self):
+    def crop_image(self):
         center_x, center_y = int(self.image_height/2), int(self.image_width/2)
         half_crop_width, half_crop_height = int(self.bordered_image_size/2), int(self.bordered_image_size/2)
-        cropped_face = self.image[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
-        return cropped_face
+        cropped_image = self.image[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
+        return cropped_image
 
     
     def run(self):
-        self.crop_image()
+        self.crop_face()
         self.create_border()
-        return self.cropped_face, self.recolor_image()
-
-
+        return self.cropped_image, self.recolor_image()
 
 # if __name__ == '__main__':
 #     image_processor = ImageProcessor("images/originals/lol2.png")
