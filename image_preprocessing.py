@@ -1,16 +1,16 @@
 import cv2
 import numpy as np
 
-# brightest_stratedgy: no recoloring, border_size = 1280 gaussian blur (5,5)...kernel = 9, ==>1536, 900
+# brightest_strategy: no recoloring, border_size = 1280 gaussian blur (5,5)...kernel = 9, ==>1536, 900
 
 # darkest_strategy: kernel = 9, border_size = 1536 recolor = np.array([[[100%pixel,70%pixel,150%pixel] if pixel>=5 else [0%pixel,0%pixel,0%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
                 # : blurr image (3,3)===>1536, 900
 
 # the inbetweens:.....brighter...> border_size = 1024, kernel==7, blur=(3,3)...1536, 900
                 # self.recolored_image = np.array([[[255%pixel,120%pixel,140%pixel] if pixel>=30 else [70%pixel,80%pixel,105%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
-                # turn to grayscale, then SEgment face
+                # turn to grayscale, then SEgment face, cropped_image_height=30
 
-# the inbetweens: ....darker...> desired_width = (900, 900), bordered_image_size = 1344, :
+# the inbetweens: ....darker...> desired_width = (900, 900), bordered_image_size = 1344, kernel=9: cropped_imageheight =100
 
                 # self.recolored_image = np.array([[[180%pixel,190%pixel,125%pixel] if pixel>=10 else [255%pixel,0%pixel,0%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
 
@@ -31,13 +31,13 @@ class ImageProcessor():
         crop_height = self.desired_height if self.desired_height<self.image_height else self.image_height
         center_x, center_y = int(self.image_width/2), int(self.image_height/2)
         half_crop_width, half_crop_height = int(crop_width/2), int(crop_height/2)
-        self.cropped_face = self.image[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x+half_crop_width]
+        self.cropped_face = self.image[center_y-half_crop_height:center_y+half_crop_height, center_x-half_crop_width:center_x + half_crop_width]
 
         return self.cropped_face
 
     def create_border(self):
 
-        image =cv2.GaussianBlur(self.cropped_face, (3,3), cv2.BORDER_DEFAULT)
+        image =cv2.GaussianBlur(self.cropped_face, (3, 3), cv2.BORDER_DEFAULT)
         # _, image = cv2.threshold(image, 20, 70, cv2.THRESH_TOZERO)
 
         cropped_image_height, cropped_image_width = self.cropped_face.shape[0:2]
@@ -75,7 +75,6 @@ class ImageProcessor():
         # cv2.imshow('blurred', image)
         # cv2.waitKey()
         # cv2.destroyAllWindows()
-
         max_pixel = max([max(row) for row in image])
         min_pixel = min([min(row) for row in image])
 
