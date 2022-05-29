@@ -1,3 +1,4 @@
+from tracemalloc import start
 import cv2
 import os
 import numpy as np
@@ -35,7 +36,7 @@ class SegmentFace(object):
 			self.__processed_image = Image.open(self.__processed_image_path).convert('RGB')
 			self.__image_name = os.path.basename(self.__original_image_path).split('.')[0]
 		except FileNotFoundError:
-			print('Image not found. Please enter a valid path.')
+			print('Image not found. Please enter a valid path...')
 			quit()
 
 	
@@ -56,28 +57,32 @@ class SegmentFace(object):
 		return changed
 
 	def run(self):
-		image = cv2.resize(np.array(self.__original_image), (1536, 1536))
+		mask_size = (1536, 1536)
+		image = cv2.resize(np.array(self.__cropped_image), mask_size)
 
 		image_mask = image.copy()
-		image_mask = cv2.rectangle(image_mask, (0, 0), (1080, 1080), self.__mask_background_color, thickness = 1080)
+		image_mask = cv2.rectangle(image_mask, (0, 0), mask_size, self.__mask_background_color, thickness = -1)
 		
 		parsing = self.evaluate()
 		
 		parsing = cv2.resize(parsing, image.shape[0:2], interpolation=cv2.INTER_NEAREST)
-		# cv2.imshow('lol', parsing.astype(np.float32))
-
-		# cv2.waitKey()
-		# cv2.destroyAllWindows()
 
 		for part in self.__table.values():
 			image = self.mask(image, parsing, part)									#mask over the original photo
 			image_mask = self.mask(image_mask, parsing, part)
 		
-		cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_mask.jpg', image_mask)
-		cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_segmented.jpg', image)
+		cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_mask.png', image_mask)
+		cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_segmented.png', image)
+		
 
+		
+		# final_mask = self.overlay_image(image_mask, mask=True)
+		# final_segmented = self.overlay_image(image)
 
-		print(f'Segmentation  of {self.__image_path_orig} complete! Results in {self.__results_dir}')
+		# cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_mask.png', final_mask)
+		# cv2.imwrite(f'{self.__results_dir}/{self.__image_name}_segmented.png', final_segmented)
+
+		print(f'Segmentation  of {self.__original_image_path} complete! Results in {self.__results_dir}')
 		pass
 
 	def evaluate(self):
@@ -91,7 +96,7 @@ class SegmentFace(object):
 		])
 
 		with torch.no_grad():
-			image = self.__image_trans.resize((512, 512), Image.BILINEAR)     #with the processed photo
+			image = self.__processed_image.resize((512, 512), Image.BILINEAR)     #with the processed photo
 			img = to_tensor(image)
 			img = torch.unsqueeze(img, 0)
 			out = net(img)[0]
@@ -99,17 +104,18 @@ class SegmentFace(object):
 		
 		return parsing
 
-	
-	def overlay_image(self):
-		original_image = Image.open(self.__original_image_path).convert('RGBA')
-		cropped_image = Image.open(self.__cropped_image_path).convert('RGBA')
+	def overlay_image(self, image, mask=False):
 		starting_position = (256, 256)
+		if mask:
+			final_mask = cv2.rectangle(np.array(self.__original_image), (0, 0), (2048, 2048), self.__mask_background_color, thickness = -1)
+		else:
+			final_mask = np.array(self.__original_image)
+		
+		final_mask[256:1536+256, 256:1536+256] = image
 
-		self.final_image = original_image.copy()
-		self.final_image.paste(cropped_image, starting_position)
-		# self.final_image.save('final.png', quality=100)
+		return final_mask
 
-		return self.final_image
+
 
 
 

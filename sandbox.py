@@ -19,10 +19,11 @@ from processor import ImageProcessor
 
 
 if __name__ == '__main__':
-    # (cropped_face, processed_face) = ImageProcessor("images/originals/lol2.png").run()
-    # cv2.imwrite('cropped.png', cropped_face)
-    # cv2.imwrite('processed.png', processed_face)
-    SegmentFace("images/originals/lol2.png", 'cropped.png', 'processed.png').run()
+    image_path = "images/originals/lol2.png"
+    (cropped_face, processed_face) = ImageProcessor(image_path).run()
+    cv2.imwrite('cropped.png', cropped_face)
+    cv2.imwrite('processed.png', processed_face)
+    SegmentFace(image_path, 'cropped.png', 'processed.png').run()
 
 # SegmentFace('recolored_image.png').run()
 # SegmentFace('original.png', 'cropped.png', 'processed.png').run()

@@ -103,3 +103,5 @@ def paste_into_it(img_path_1, img_path2):
 # paste_into_it('lol2.png', 'lol2_cropped_segmented.png')
 
 crop_orig('images/originals/lol2.png')
+
+

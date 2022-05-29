@@ -150,16 +150,13 @@ class ImageProcessor():
         return self.recolored_image
 
     def run(self):
-
         self.crop_image()
         self.create_border()
         recolored_image = self.recolor_image()
-
         return recolored_image
 
 
 if __name__ == "__main__":
-
     image_processor = ImageProcessor("bet_darker_2.png")
     cropped_face = image_processor.crop_image()
     bordered_face = image_processor.create_border()

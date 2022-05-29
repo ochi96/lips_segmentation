@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from hsv import categorize_image
+from face_type import categorize_image
 
 
 # brightest_strategy: no recoloring, border_size = 1280 gaussian blur (5,5)...kernel = 9, ==>1536, 900
@@ -8,13 +8,23 @@ from hsv import categorize_image
 # darkest_strategy: kernel = 9, border_size = 1536 recolor = np.array([[[100%pixel,70%pixel,150%pixel] if pixel>=5 else [0%pixel,0%pixel,0%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
                 # : blurr image (3,3)===>1536, 900
 
-# the inbetweens:.....brighter...> face_size = 1024,  blur=(3,3)...1536, 900
+# the inbetweens:.....lighter...> face_size = 1024,  blur=(3,3)...1536, 900
                 # self.recolored_image = np.array([[[255%pixel,120%pixel,140%pixel] if pixel>=30 else [70%pixel,80%pixel,105%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
                 # turn to grayscale, then SEgment face, cropped_image_height=30
 
 # the inbetweens: ....darker...> desired_width = (900, 900), bordered_image_size = 1344, kernel=9: mean_height =100
 
                 # self.recolored_image = np.array([[[180%pixel,190%pixel,125%pixel] if pixel>=0 else [255%pixel,0%pixel,0%pixel] for pixel in row] for row in scaled_gray], dtype = np.dtype('f8'))
+
+
+
+# lighter inb without grayscaling afterwards
+# self.bordered_image_size = 1360
+#             self.pixel_threshold = 30
+#             self.mean_height = 100
+#             self.bgr = {'b' : 120, 'g' : 240, 'r' : 130}
+#             self.bgr_alt = {'b': 30, 'g' : 40,  'r' : 60}
+
 
 class ImageProcessor():
 
@@ -30,22 +40,37 @@ class ImageProcessor():
         self.mean_height = 40
         self.pixel_threshold = 0
 
-        # if self.face_type=="brightest":
-        #     self.desired_height, self.desired_width = (768, 768)
+
+
+        if self.face_type=="brightest":
+            self.bordered_image_size = 1468
+            # self.desired_height, self.desired_width = (768, 768)
   
         if self.face_type=="darkest":
             self.bgr = {'b' : 100,  'g' : 70,  'r' : 150}
             self.bgr_alt = {'b' : 0,  'g' : 0,  'r' : 0}
         
         if self.face_type=="darker_inb":
-            self.bordered_image_size = 1344
-            self.bgr = {'b' : 180,  'g' : 190,  'r' : 110}
-            self.bgr_alt = {'b' : 200, 'g' : 0,  'r' : 0}
+            self.bordered_image_size = 1350           #1344 works best for now
+            self.mean_height = 40                      #100 works decently
+            self.bgr = {'b' : 180,  'g' : 180,  'r' : 125}
+            self.bgr_alt = {'b' : 255, 'g' : 0,  'r' : 0}
         
         if self.face_type=="lighter_inb":
-            self.bgr = {'b' : 255, 'g' : 120, 'r' : 140}
-            self.bgr_alt = {'b': 70, 'g' : 80,  'r' : 105}
+            self.bordered_image_size = 1536  #1485 DECENT
+
+            self.pixel_threshold = 0
+            self.mean_height = 100
+            self.bgr = {'b' : 0, 'g' : 120, 'r' : 170}
+            self.bgr_alt = {'b': 180, 'g' : 0,  'r' : 0}
             # ....then grayscale before segment face
+
+
+            # self.bordered_image_size = 1440
+            # self.pixel_threshold = 30
+            # self.mean_height = 100
+            # self.bgr = {'b' : 120, 'g' : 240, 'r' : 130}
+            # self.bgr_alt = {'b': 30, 'g' : 40,  'r' : 60}
         
         pass
 
@@ -85,16 +110,18 @@ class ImageProcessor():
                                     [-1, 9,-1],
                                     [-1,-1,-1]
                                     ])
-        image= cv2.filter2D(self.bordered_image, -1, sharpening_kernel)
+        image_ = cv2.filter2D(self.bordered_image, -1, sharpening_kernel)
 
-        image= cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        image = cv2.GaussianBlur(image, self.gaussian_blur, cv2.BORDER_DEFAULT)
+        image = cv2.cvtColor(image_, cv2.COLOR_BGR2GRAY)
+        # image = cv2.GaussianBlur(image, self.gaussian_blur, cv2.BORDER_DEFAULT)
 
         max_pixel = max([max(row) for row in image])
-        scaled_gray = np.array([[(float(pixel/max_pixel)*249) + 1 for pixel in row] for row in image], dtype = np.dtype('float32'))
+        scaled_gray = np.array([[(float(pixel/max_pixel)*249) + 1 for pixel in row] for row in image], dtype = np.dtype("float32"))
 
         # add one to each pixel.....for division purposes later.(avoiding division by zero)
-        scaled_gray = np.array([[round(pixel)+1 for pixel in row] for row in scaled_gray], dtype = np.dtype('float32'))
+        scaled_gray = np.array([[round(pixel)+1 for pixel in row] for row in scaled_gray], dtype = np.dtype("float32"))
+
+        # cv2.imwrite("scaled_gray.png", scaled_gray)
 
         if self.face_type == "brightest":
             self.recolored_image = scaled_gray
@@ -103,11 +130,17 @@ class ImageProcessor():
         elif self.face_type == "darkest" or self.face_type=="darker_inb" or self.face_type == "lighter_inb":
             self.recolored_image = np.array([[[self.bgr['b']%pixel, self.bgr['g']%pixel, self.bgr['r']%pixel] if pixel>=self.pixel_threshold else \
                 [self.bgr_alt['b']%pixel,self.bgr_alt['g']%pixel,self.bgr_alt['r']%pixel] \
-                    for pixel in row] for row in scaled_gray], dtype = np.dtype('float32'))
-            if self.face_type == "lighter_inb":
-                self.recolored_image= cv2.cvtColor(self.recolored_image, cv2.COLOR_BGR2GRAY)
-            print(self.face_type)
+                    for pixel in row] for row in scaled_gray], dtype = np.dtype(np.uint8))
 
+            if self.face_type == "lighter_inb":
+                self.recolored_image = cv2.cvtColor(image_, cv2.COLOR_BGR2GRAY)
+            # #     print(self.recolored_image)
+            # #     # print(scaled_gray)
+            #     _, self.recolored_image = cv2.threshold(self.recolored_image, 120, 140, cv2.THRESH_BINARY)
+            # #     # print(self.recolored_image)
+            #     self.recolored_image = cv2.adaptiveThreshold(self.recolored_image, 80, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 3)
+                # cv2.imwrite("rec_gray.png", self.recolored_image)
+        print(self.face_type)
         return self.recolored_image
  
     def get_face_type(self):
